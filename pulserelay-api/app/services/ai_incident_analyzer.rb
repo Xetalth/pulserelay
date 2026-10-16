@@ -28,7 +28,7 @@ class AiIncidentAnalyzer
       req.headers["Authorization"] = "Bearer #{api_key}"
       req.headers["Content-Type"] = "application/json"
       req.body = {
-        model: "llama-3.1-8b-instant",
+        model: "openai/gpt-oss-20b",
         messages: [
           { role: "system", content: "You are a professional SRE incident analyzer. Always respond with valid JSON containing 'rca' and 'remediation' fields." },
           { role: "user", content: prompt }
