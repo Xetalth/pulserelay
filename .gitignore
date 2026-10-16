@@ -7,3 +7,4 @@ pulserelay-web/node_modules/
 pulserelay-web/.next/
 pulserelay-web/.env.local
 .DS_Store
+.env

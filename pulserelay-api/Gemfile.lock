@@ -346,6 +346,7 @@ DEPENDENCIES
   bundler-audit
   debug
   dotenv-rails (~> 3.2)
+  faraday (~> 2.15)
   image_processing (~> 1.2)
   kamal
   puma (>= 5.0)

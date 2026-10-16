@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  service: one
+  title: MyString
+  description: MyText
+  severity: MyString
+  status: MyString
+  ai_rca: MyText
+  ai_remediation: MyText
+
+two:
+  service: two
+  title: MyString
+  description: MyText
+  severity: MyString
+  status: MyString
+  ai_rca: MyText
+  ai_remediation: MyText
