@@ -11,17 +11,17 @@ class AiIncidentAnalyzer
 
     service_name = incident.service&.name || "Unknown Service"
     prompt = <<~PROMPT
-      You are an elite Site Reliability Engineer (SRE) at a Fortune 500 tech enterprise.
+      You are an elite Site Reliability Engineer (SRE).
       An incident occurred on the service: "#{service_name}".
       Incident Title: "#{incident.title}"
       Description / System Logs: "#{incident.description}"
       Severity: "#{incident.severity}"
 
-      Analyze the incident and return STRICTLY a JSON object with two keys:
-      1. "rca": A concise, highly technical root-cause explanation (2 sentences max).
-      2. "remediation": Clear, actionable SRE runbook steps to mitigate and resolve the incident (2 sentences max).
-      
-      Respond with ONLY raw JSON, without markdown formatting or backticks.
+      Return a valid JSON object with EXACTLY these two keys:
+      {
+        "rca": "Concise technical root-cause explanation (2 sentences max)",
+        "remediation": "Actionable SRE runbook steps to mitigate and resolve (2 sentences max)"
+      }
     PROMPT
 
     response = Faraday.post(GROQ_API_URL) do |req|
@@ -29,7 +29,10 @@ class AiIncidentAnalyzer
       req.headers["Content-Type"] = "application/json"
       req.body = {
         model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          { role: "system", content: "You are a professional SRE incident analyzer. Always respond with valid JSON containing 'rca' and 'remediation' fields." },
+          { role: "user", content: prompt }
+        ],
         temperature: 0.2,
         response_format: { type: "json_object" }
       }.to_json
@@ -37,17 +40,26 @@ class AiIncidentAnalyzer
 
     if response.success?
       parsed = JSON.parse(response.body)
-      content = JSON.parse(parsed.dig("choices", 0, "message", "content"))
-      {
-        rca: content["rca"],
-        remediation: content["remediation"]
-      }
+      raw_content = parsed.dig("choices", 0, "message", "content")
+      
+      # Markdown kod bloklarını (```json ... ```) temizle
+      cleaned_content = raw_content.to_s.gsub(/```json/i, "").gsub(/```/, "").strip
+      content = JSON.parse(cleaned_content)
+
+      rca = content["rca"] || content["RCA"] || content["root_cause"]
+      remediation = content["remediation"] || content["Remediation"] || content["action_plan"]
+
+      if rca.present? && remediation.present?
+        { rca: rca, remediation: remediation }
+      else
+        fallback_analysis(incident)
+      end
     else
-      Rails.logger.error("Groq API error: #{response.status} - #{response.body}")
+      Rails.logger.error("Groq API error #{response.status}: #{response.body}")
       fallback_analysis(incident)
     end
   rescue StandardError => e
-    Rails.logger.error("AI Analysis exception: #{e.message}")
+    Rails.logger.error("AI Analysis exception: #{e.class} - #{e.message}")
     fallback_analysis(incident)
   end
 
